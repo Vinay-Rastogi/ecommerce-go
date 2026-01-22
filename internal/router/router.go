@@ -13,11 +13,13 @@ func SetupRouter(
 	orderHandler *handlers.OrderHandler,
 	subscriptionHandler *handlers.SubscriptionHandler,
 	paymentHandler *handlers.PaymentHandler,
+	searchHandler *handlers.SearchHandler,
 ) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/users", userHandler.CreateUser).Methods("POST")
 	r.HandleFunc("/users/{id}", userHandler.GetUser).Methods("GET")
+	r.HandleFunc("/users", userHandler.GetAllUsers).Methods("GET")
 
 	r.HandleFunc("/stores", storeHandler.CreateStore).Methods("POST")
 	r.HandleFunc("/stores", storeHandler.GetStores).Methods("GET")
@@ -36,6 +38,10 @@ func SetupRouter(
 
 	// Payments
     r.HandleFunc("/payments", paymentHandler.CreatePayment).Methods("POST")
+
+	// Search
+	r.HandleFunc("/search/products", searchHandler.SearchProducts).Methods("GET")
+	
 
 
 	return r

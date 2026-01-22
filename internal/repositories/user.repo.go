@@ -9,6 +9,7 @@ import (
 type UserRepository interface {
 	Create(ctx context.Context, user *models.UserModel) error
 	GetByID(ctx context.Context, id string) (*models.UserModel, error)
+	GetAll(ctx context.Context) ([]models.UserModel, error)
 }
 
 type userRepo struct {
@@ -37,4 +38,32 @@ func (r *userRepo) GetByID(ctx context.Context, id string) (*models.UserModel, e
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *userRepo) GetAll(ctx context.Context) ([]models.UserModel, error) {
+	rows, err := r.db.QueryContext(
+		ctx,
+		`SELECT id, name, email, phone, address FROM users`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []models.UserModel
+	for rows.Next() {
+		var u models.UserModel
+		if err := rows.Scan(
+			&u.ID,
+			&u.Name,
+			&u.Email,
+			&u.Phone,
+			&u.Address,
+		); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+
+	return users, nil
 }

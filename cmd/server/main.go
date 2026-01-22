@@ -8,47 +8,65 @@ import (
 	"ecommerce/internal/handlers"
 	"ecommerce/internal/repositories"
 	"ecommerce/internal/router"
+	"ecommerce/internal/search"
 	"ecommerce/internal/services"
 )
 
 func main() {
+	// ---------------- DB ----------------
 	db := config.ConnectDB()
 	defer db.Close()
 
-	// User setup
+	// ---------------- USERS ----------------
 	userRepo := repositories.NewUserRepo(db)
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
-	// Store setup
+	// ---------------- STORES ----------------
 	storeRepo := repositories.NewStoreRepo(db)
 	storeService := services.NewStoreService(storeRepo)
 	storeHandler := handlers.NewStoreHandler(storeService)
 
-	// Product setup
+	// ---------------- PRODUCTS ----------------
 	productRepo := repositories.NewProductRepo(db)
 	productService := services.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productService)
 
-	// Order setup
+	// ---------------- ORDERS ----------------
 	orderRepo := repositories.NewOrderRepo(db)
-	orderService := services.NewOrderService(db,orderRepo)
+	orderService := services.NewOrderService(db, orderRepo)
 	orderHandler := handlers.NewOrderHandler(orderService)
 
-	// Subscription setup
+	// ---------------- SUBSCRIPTIONS ----------------
 	subscriptionRepo := repositories.NewSubscriptionRepo(db)
 	subscriptionService := services.NewSubscriptionService(subscriptionRepo)
 	subscriptionHandler := handlers.NewSubscriptionHandler(subscriptionService)
 
-
-	// Payment setup
+	// ---------------- PAYMENTS ----------------
 	paymentRepo := repositories.NewPaymentRepo(db)
-paymentService := services.NewPaymentService(paymentRepo)
-paymentHandler := handlers.NewPaymentHandler(paymentService)
+	paymentService := services.NewPaymentService(paymentRepo)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
 
+	// ---------------- ELASTICSEARCH ----------------
+	esClient, err := search.NewElasticClient()
+	if err != nil {
+		log.Fatalf("failed to connect to Elasticsearch: %v", err)
+	}
 
-	// Router setup
-	r := router.SetupRouter(userHandler, storeHandler,productHandler,orderHandler,subscriptionHandler,paymentHandler)
+	searchService := services.NewSearchService(esClient)
+	searchHandler := handlers.NewSearchHandler(searchService)
+
+	// ---------------- ROUTER ----------------
+	r := router.SetupRouter(
+		userHandler,
+		storeHandler,
+		productHandler,
+		orderHandler,
+		subscriptionHandler,
+		paymentHandler,
+		searchHandler, // 🔍 search integrated
+	)
+
 	log.Println("Server running on :3000")
 	log.Fatal(http.ListenAndServe(":3000", r))
 }
